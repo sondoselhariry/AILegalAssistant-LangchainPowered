@@ -18,7 +18,7 @@ vectordb = Chroma(persist_directory="egyptAI_rag_db", embedding_function=embeddi
 retriever = vectordb.as_retriever(search_kwargs={"k": k})
 
 # === OpenRouter Key ===
-os.environ["OPENROUTER_API_KEY"] = "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"  # Replace with your actual key
+os.environ["OPENROUTER_API_KEY"] = ""
 llm = ChatOpenAI(
     model="tngtech/deepseek-r1t-chimera:free",
     openai_api_key=os.environ["OPENROUTER_API_KEY"],
@@ -131,3 +131,4 @@ elif st.session_state.phase == "final":
     if st.button("Start Over"):
         st.session_state.phase = "input"
         st.session_state.state = {}
+
