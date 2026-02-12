@@ -16,8 +16,11 @@ masaar_docs = masaar_loader.load()
 
 #Chunk the masaar PDF based on section titles
 
+#merge the PDF into a single searchable text string
 full_text_masaar = "\n".join([doc.page_content for doc in masaar_docs])
 
+
+#encode the hierarchy structure into the system
 masaar_section_titles = [ 
 "Introduction",
 "The Legislative Environment",
@@ -77,7 +80,7 @@ masaar_section_titles = [
 def build_chunks_by_section(full_text, masaar_section_titles):
     section_docs = []
 
-    # === Step 1: Extract start positions of each title in the text ===
+    # === Step 1: Extract start positions of each title in the text then store them ordered ===
     positions = []
     for title in masaar_section_titles:
         pattern = re.escape(title)
@@ -88,6 +91,8 @@ def build_chunks_by_section(full_text, masaar_section_titles):
     positions.sort()  # Ensure section order by start position in text
 
     # === Step 2: Slice between positions and build Document objects ===
+    #Each section begins at its heading & Ends right before the next heading to preserve narrative coherence
+
     for i in range(len(positions)):
         start_pos, raw_title = positions[i]
         end_pos = positions[i+1][0] if i+1 < len(positions) else len(full_text)
@@ -97,6 +102,7 @@ def build_chunks_by_section(full_text, masaar_section_titles):
             continue  # Skip empty content
 
         # === Step 3: Clean and parse title hierarchy ===
+        #preserved section hierarchy in metadata to support context-aware retrieval later
         title_parts = [t.strip() for t in raw_title.split(">")]
         section_title = title_parts[-1]  # Last part is the specific title
         parent_section = title_parts[0] if len(title_parts) > 1 else None
@@ -118,6 +124,8 @@ def build_chunks_by_section(full_text, masaar_section_titles):
 masaar_docs_final= build_chunks_by_section(full_text_masaar, masaar_section_titles)
 
 # === Chunking function for charter ===
+
+#step 1:merge the PDF into a single searchable text string
 
 full_text_charter = "\n".join([doc.page_content for doc in charter_docs])
 
@@ -191,10 +199,17 @@ charter_docs_1=build_charter_chunks_with_metadata(full_text_charter, charter_sec
 
 charter_docs_final= tag_principle_in_chunks (charter_docs_1)
 
+#Created a unified corpus with consistent metadata schemas
+
 all_docs = charter_docs_final + masaar_docs_final
 
 
 # === Chunking ===
+
+#custom semantic chunks might be too long
+#secondary chunking to normalise length
+#preserved semantic integrity first, then applied size-normalisation for embedding quality.
+
 splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
 split_docs = splitter.split_documents(all_docs)
 #To check chunk size
@@ -206,6 +221,9 @@ for doc in all_docs[:3]:
 
 
 # === Choose your embedding model ===
+
+#Best general-purpose semantic mode
+
 embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-mpnet-base-v2"
 )
