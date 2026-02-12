@@ -6,7 +6,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 import re
 
 # === API key for OpenRouter ===
-os.environ["OPENROUTER_API_KEY"] = ""
+os.environ["OPENROUTER_API_KEY"] = "insert key here"
 
 # === LLM setup ===
 llm = ChatOpenAI(
@@ -24,6 +24,8 @@ vectordb = Chroma(
     persist_directory="egyptAI_rag_db",
     embedding_function=embeddings
 )
+
+#fetch relevant legal precedents when drafting clauses, grounding the model’s output
 retriever = vectordb.as_retriever(search_kwargs={"k": k})
 
 def chroma_retrieve(query):
@@ -60,12 +62,13 @@ from typing import TypedDict, List, Union
 from langgraph.graph import StateGraph, END
 
 # Define what the shared state looks like
+#optional fields (total=False)
 class ClauseState(TypedDict, total=False):
     user_prompt: str
     draft_clause: str
     final_clause: str
     retrieved_clauses: List[str]
-    ethics_flags: Union[str, List[str]]
+    ethics_flags: Union[str, List[str]] #can return a single text message or a structured list of issues depending on the clause
     review_decision: str
 
 
@@ -106,6 +109,8 @@ def get_user_decision():
             return decision
         print("Invalid input. Please type 'approve' or 'revise'.")
 
+
+#showcase output so far to the human reviewer
 def show_to_user(clause, flags, references):
     print("\nDraft Clause:")
     print(clause)
@@ -116,7 +121,7 @@ def show_to_user(clause, flags, references):
     else:
         print(flags)
     print("\n Retrieved Precedents:")
-    for ref in references:
+    for ref in references:   #the references coming back from retriever may be in one of two forms: LangChain Document objects, Cleaned strings
         if hasattr(ref, "page_content"):
             print("- ", ref.page_content.strip())
         else:
